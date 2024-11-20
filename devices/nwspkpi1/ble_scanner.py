@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import time
+from pathlib import Path
 from datetime import datetime
 
 import pandas as pd
@@ -53,18 +54,22 @@ def get_manufacturer_name(raw_data_hex, manufacturer_dict):
             return "Unknown"
     return "Unknown"
 
-def initialize_csv_file(filename):
+def initialize_csv_file():
     """Initialize the CSV file with headers if it doesn't exist."""
-    directory = os.path.dirname(filename)
-    if directory:
-        os.makedirs(directory, exist_ok=True)
-    if not os.path.isfile(filename):
+    today = datetime.now().strftime('%Y-%m-%d')
+    logs_dir = Path('/home/nwspkpi1/telescreen/devices/nwspkpi1/logs')
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    
+    filename = logs_dir / f'ble_log_{today}.csv'
+    if not filename.exists():
         with open(filename, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow([
                 "Timestamp", "MAC Address", "RSSI",
                 "Manufacturer", "Raw Data", "Additional Metadata"
             ])
+    return filename
+
 
 def scan_ble_devices(scanner, rssi_threshold, scan_duration, manufacturer_dict):
     logger.info(f"Starting {scan_duration}-second BLE scan...")
@@ -105,8 +110,10 @@ def main():
     parser.add_argument('--manufacturer_file', type=str,
                         default='Bluetooth-Company-Identifiers.csv',
                         help='Path to the Bluetooth manufacturer identifiers CSV file.')
-    parser.add_argument('--output_file', type=str, default='ble_log.csv',
-                        help='Path to the output CSV file.')
+    # parser.add_argument('--output_dir', type=str, default='.',
+    #                    help='Base directory for log files.')
+    parser.add_argument('--output_file', type=str, 
+                    help='Deprecated: Using logs directory instead.')
     parser.add_argument('--rssi_threshold', type=int, default=-75,
                         help='RSSI threshold in dBm.')
     parser.add_argument('--scan_duration', type=float, default=30.0,
@@ -114,11 +121,12 @@ def main():
     parser.add_argument('--sleep_duration', type=float, default=60.0,
                         help='Time between scans in seconds.')
     args = parser.parse_args()
-
+    
     manufacturer_dict = load_manufacturer_data(args.manufacturer_file)
     if not manufacturer_dict:
         logger.warning("Manufacturer dictionary is empty. Manufacturer names will not be available.")
-    initialize_csv_file(args.output_file)
+    
+    output_file = initialize_csv_file()
 
     scanner = Scanner().withDelegate(DefaultDelegate())
 
@@ -128,7 +136,7 @@ def main():
             args.scan_duration, manufacturer_dict
         )
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        with open(args.output_file, "a", newline="") as f:
+        with open(output_file, "a", newline="") as f:
             writer = csv.writer(f)
             writer.writerows(detected_devices)
         logger.info(
