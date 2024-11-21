@@ -13,3 +13,7 @@ __pycache__/
 
 # Project specific
 ble_log.csv   # don't sync the log file (contains specific MAC addresses)
+ble_log.csv
+counts.csv
+logs/
+../../webhook_server.py
