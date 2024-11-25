@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dynamic Page Rotator</title>
+    <style>
+        body, html, iframe {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <iframe id="pageFrame" src=""></iframe>
+    <script>
+        const ROTATION_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
+        const CHECK_FILES_INTERVAL = 60 * 1000;   // Check for new files every minute
+        
+        let currentPageIndex = 0;
+        let pages = [];
+
+        // Function to get list of HTML files in directory
+        async function getPageList() {
+            try {
+                const response = await fetch('../config/list-pages.php');
+                const newPages = await response.json();
+                
+                // Filter out the rotator itself and any non-HTML files
+                return newPages.filter(page => 
+                    page.endsWith('.html') && 
+                    page !== 'rotator.html' &&
+                    page !== 'index.html'
+                );
+            } catch (error) {
+                console.error('Error getting page list:', error);
+                return [];
+            }
+        }
+
+        // Function to rotate to the next page
+        async function rotatePage() {
+            if (pages.length === 0) {
+                pages = await getPageList();
+                if (pages.length === 0) {
+                    console.error('No pages found to display');
+                    return;
+                }
+            }
+
+            currentPageIndex = (currentPageIndex + 1) % pages.length;
+            const nextPage = pages[currentPageIndex];
+            document.getElementById('pageFrame').src = nextPage;
+            console.log('Rotating to:', nextPage);
+        }
+
+        // Function to update the page list
+        async function updatePageList() {
+            const newPages = await getPageList();
+            if (newPages.length > 0) {
+                // If the list has changed, update it
+                if (JSON.stringify(newPages) !== JSON.stringify(pages)) {
+                    console.log('Page list updated:', newPages);
+                    pages = newPages;
+                    // If we're at the end of the list, reset the index
+                    if (currentPageIndex >= pages.length) {
+                        currentPageIndex = 0;
+                    }
+                }
+            }
+        }
+
+        // Initialize and start rotation
+        async function init() {
+            // Get initial page list
+            pages = await getPageList();
+            if (pages.length > 0) {
+                // Load the first page
+                document.getElementById('pageFrame').src = pages[0];
+                console.log('Initial page:', pages[0]);
+                
+                // Start the rotation
+                setInterval(rotatePage, ROTATION_INTERVAL);
+                // Start checking for new files
+                setInterval(updatePageList, CHECK_FILES_INTERVAL);
+            } else {
+                console.error('No pages found to display');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
