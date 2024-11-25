@@ -162,7 +162,8 @@ func handleSave(w http.ResponseWriter, r *http.Request) {
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
-	filename := r.FormValue("filename")
+    
+    filename := r.FormValue("filename")
     content := r.FormValue("content")
     
     if !strings.HasSuffix(filename, ".html") || strings.Contains(filename, "/") {

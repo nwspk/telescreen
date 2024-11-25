@@ -1,5 +1,6 @@
 package main
 
+// Import the template from template.go
 const editorHTML = `<!DOCTYPE html>
 <html>
 <head>
@@ -161,6 +162,9 @@ const editorHTML = `<!DOCTYPE html>
             pages: {}
         };
 
+        // Template from template.go
+        const newPageTemplate = ` + "`" + newPageTemplate + "`" + `;
+
         function loadFileList() {
             Promise.all([
                 fetch('/api/files?t=' + new Date().getTime()),
@@ -247,11 +251,11 @@ const editorHTML = `<!DOCTYPE html>
         }
 
         function newFile() {
-            document.getElementById('editor').value = '';
+            document.getElementById('editor').value = newPageTemplate;
             document.getElementById('filename').value = 'page_' + 
                 new Date().toISOString().slice(0,10) + '.html';
-            document.getElementById('preview').innerHTML = '';
-            showStatus('New file created');
+            document.getElementById('preview').innerHTML = newPageTemplate;
+            showStatus('New template loaded');
         }
 
         function save() {
