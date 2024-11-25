@@ -10,6 +10,16 @@ import (
 )
 
 var pagesDir string
+var configFile string
+
+type PageConfig struct {
+    Pages map[string]PageStatus `json:"pages"`
+}
+
+type PageStatus struct {
+    Active bool `json:"active"`
+    Order  int  `json:"order"`
+}
 
 func main() {
     var err error
@@ -19,18 +29,89 @@ func main() {
         log.Fatal("Could not resolve pages directory path:", err)
     }
     
+    configFile = filepath.Join("..", "config", "pages-config.json")
+    
     log.Printf("Starting editor server on :8081 (serving files from %s)", pagesDir)
     
     http.HandleFunc("/api/files", handleFiles)
     http.HandleFunc("/api/save", handleSave)
+    http.HandleFunc("/api/config", handleConfig)
+    http.HandleFunc("/api/toggle-status", handleToggleStatus)
     
-    // Add no-cache handler for static files
     fs := http.FileServer(http.Dir(pagesDir))
     http.Handle("/pages/", http.StripPrefix("/pages/", noCacheHandler(fs)))
     
     http.HandleFunc("/", serveEditor)
     
     log.Fatal(http.ListenAndServe(":8081", nil))
+}
+
+func handleConfig(w http.ResponseWriter, r *http.Request) {
+    if r.Method != "GET" {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+    
+    config, err := loadConfig()
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(config)
+}
+
+func handleToggleStatus(w http.ResponseWriter, r *http.Request) {
+    if r.Method != "POST" {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    var request struct {
+        Filename string     `json:"filename"`
+        Config   PageConfig `json:"config"`
+    }
+    
+    if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+    
+    if err := saveConfig(request.Config); err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    
+    w.WriteHeader(http.StatusOK)
+}
+
+func loadConfig() (PageConfig, error) {
+    var config PageConfig
+    
+    data, err := os.ReadFile(configFile)
+    if err != nil {
+        if os.IsNotExist(err) {
+            return PageConfig{
+                Pages: make(map[string]PageStatus),
+            }, nil
+        }
+        return config, err
+    }
+    
+    err = json.Unmarshal(data, &config)
+    if config.Pages == nil {
+        config.Pages = make(map[string]PageStatus)
+    }
+    return config, err
+}
+
+func saveConfig(config PageConfig) error {
+    data, err := json.MarshalIndent(config, "", "    ")
+    if err != nil {
+        return err
+    }
+    return os.WriteFile(configFile, data, 0644)
 }
 
 func noCacheHandler(h http.Handler) http.Handler {
@@ -48,7 +129,6 @@ func handleFiles(w http.ResponseWriter, r *http.Request) {
         return
     }
     
-    // Add cache control headers
     w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
     w.Header().Set("Pragma", "no-cache")
     w.Header().Set("Expires", "0")
@@ -82,8 +162,7 @@ func handleSave(w http.ResponseWriter, r *http.Request) {
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
-    
-    filename := r.FormValue("filename")
+	filename := r.FormValue("filename")
     content := r.FormValue("content")
     
     if !strings.HasSuffix(filename, ".html") || strings.Contains(filename, "/") {

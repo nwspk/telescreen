@@ -46,9 +46,15 @@ const editorHTML = `<!DOCTYPE html>
             padding: 8px 12px;
             cursor: pointer;
             border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .file-list li:hover {
             background: #e0e0e0;
+        }
+        .file-list li.inactive {
+            opacity: 0.6;
         }
         .controls {
             margin-bottom: 15px;
@@ -101,6 +107,32 @@ const editorHTML = `<!DOCTYPE html>
             background: #f8d7da;
             color: #721c24;
         }
+        .status-toggle {
+            width: 40px;
+            height: 20px;
+            background: #ccc;
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .status-toggle.active {
+            background: #4CAF50;
+        }
+        .status-toggle::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+        .status-toggle.active::after {
+            transform: translateX(20px);
+        }
     </style>
 </head>
 <body>
@@ -125,42 +157,101 @@ const editorHTML = `<!DOCTYPE html>
         </div>
     </div>
     <script>
-        const newPageTemplate = ` + "`" + newPageTemplate + "`" + `;
+        let pageConfig = {
+            pages: {}
+        };
 
-	function loadFile(filename) {
-	    // Add cache-busting query parameter
-	    fetch('/pages/' + filename + '?t=' + new Date().getTime())
-	        .then(response => response.text())
-	        .then(content => {
-	            document.getElementById('editor').value = content;
-	            document.getElementById('filename').value = filename;
-	        })
-	        .catch(error => showStatus('Error loading file', true));
-	}
+        function loadFileList() {
+            Promise.all([
+                fetch('/api/files?t=' + new Date().getTime()),
+                fetch('/api/config?t=' + new Date().getTime())
+            ])
+            .then(([filesResp, configResp]) => Promise.all([
+                filesResp.json(), 
+                configResp.json()
+            ]))
+            .then(([files, config]) => {
+                pageConfig = config;
+                const list = document.getElementById('fileList');
+                list.innerHTML = '';
+                
+                files.forEach(file => {
+                    const li = document.createElement('li');
+                    const isActive = pageConfig.pages[file]?.active !== false;
+                    li.className = isActive ? '' : 'inactive';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = file;
+                    nameSpan.onclick = () => loadFile(file);
+                    
+                    const toggle = document.createElement('div');
+                    toggle.className = 'status-toggle' + (isActive ? ' active' : '');
+                    toggle.onclick = (e) => {
+                        e.stopPropagation();
+                        togglePageStatus(file);
+                    };
+                    
+                    li.appendChild(nameSpan);
+                    li.appendChild(toggle);
+                    list.appendChild(li);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading file list:', error);
+                showStatus('Error loading file list', true);
+            });
+        }
 
-	function loadFileList() {
-	    // Add cache-busting query parameter
-	    fetch('/api/files' + '?t=' + new Date().getTime())
-	        .then(response => response.json())
-	        .then(files => {
-	            const list = document.getElementById('fileList');
-	            list.innerHTML = '';
-	            files.forEach(file => {
-	                const li = document.createElement('li');
-	                li.textContent = file;
-	                li.onclick = () => loadFile(file);
-	                list.appendChild(li);
-	            });
-	        })
-	        .catch(error => showStatus('Error loading file list', true));
-	}
+        function togglePageStatus(filename) {
+            if (!pageConfig.pages[filename]) {
+                pageConfig.pages[filename] = {
+                    active: true,
+                    order: Object.keys(pageConfig.pages).length + 1
+                };
+            }
+            
+            pageConfig.pages[filename].active = !pageConfig.pages[filename].active;
+
+            fetch('/api/toggle-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    filename,
+                    config: pageConfig
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    loadFileList();
+                    showStatus(filename + ' status toggled');
+                } else {
+                    throw new Error('Toggle failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error toggling status:', error);
+                showStatus('Error toggling status', true);
+            });
+        }
+
+        function loadFile(filename) {
+            fetch('/pages/' + filename + '?t=' + new Date().getTime())
+                .then(response => response.text())
+                .then(content => {
+                    document.getElementById('editor').value = content;
+                    document.getElementById('filename').value = filename;
+                })
+                .catch(error => showStatus('Error loading file', true));
+        }
 
         function newFile() {
-            document.getElementById('editor').value = newPageTemplate;
+            document.getElementById('editor').value = '';
             document.getElementById('filename').value = 'page_' + 
                 new Date().toISOString().slice(0,10) + '.html';
-            document.getElementById('preview').innerHTML = newPageTemplate;
-            showStatus('New template loaded');
+            document.getElementById('preview').innerHTML = '';
+            showStatus('New file created');
         }
 
         function save() {

@@ -1,25 +1,44 @@
 #!/bin/bash
 
-# Debug logging
-exec 1> >(logger -s -t $(basename $0)) 2>&1
+# Enable debug mode
+set -x
+
 echo "Script started"
+
+# Print diagnostic information
 echo "Current user: $(whoami)"
 echo "Current directory: $(pwd)"
 echo "PATH: $PATH"
 
-# Path to your pages directory
-PAGES_DIR="/home/nwspkpi1/telescreen/devices/nwspkpi1/display_rotation/pages"
+# Get the absolute path to the config directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+BASE_DIR="$(dirname "$SCRIPT_DIR")"
+CONFIG_DIR="$BASE_DIR/config"
+PAGES_DIR="$BASE_DIR/pages"
 
-# Start a simple PHP server in the background
-cd "$PAGES_DIR"
-php -S 0.0.0.0:8080 &
+echo "Config directory: $CONFIG_DIR"
+
+# Change to the config directory
+cd "$CONFIG_DIR" || exit 1
+
+# Start PHP development server with router
+php -S 0.0.0.0:8080 router.php &
 PHP_SERVER_PID=$!
 
 # Wait a moment for the server to start
 sleep 2
 
-# Launch Epiphany browser with the rotator page
-epiphany-browser "http://localhost:8080/rotator.html"
+# Start the web browser in full screen mode
+# Update this path based on your system's browser
+epiphany-browser 
+#--display=:0 
+#--profile="$CONFIG_DIR" \
+#    --application-mode --full-screen 
+"http://localhost:8080/rotator.html" &
+BROWSER_PID=$!
 
-# If Epiphany browser is closed, kill the PHP server
-kill $PHP_SERVER_PID
+# Wait for signals
+trap "kill $PHP_SERVER_PID $BROWSER_PID; exit" SIGINT SIGTERM
+
+# Keep the script running
+wait

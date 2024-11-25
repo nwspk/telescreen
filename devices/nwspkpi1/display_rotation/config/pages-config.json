@@ -1,0 +1,32 @@
+{
+    "pages": {
+        "austerity.html": {
+            "active": false,
+            "order": 1
+        },
+        "events-this-week.html": {
+            "active": true,
+            "order": 2
+        },
+        "image.html": {
+            "active": false,
+            "order": 3
+        },
+        "image_test.html": {
+            "active": true,
+            "order": 4
+        },
+        "ration-club.html": {
+            "active": false,
+            "order": 5
+        },
+        "smb-instructions.html": {
+            "active": false,
+            "order": 6
+        },
+        "test.html": {
+            "active": false,
+            "order": 7
+        }
+    }
+}
