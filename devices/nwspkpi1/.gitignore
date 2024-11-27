@@ -19,3 +19,4 @@ logs/
 display_rotation/pages/*
 !display_rotation/pages/.gitkeep
 !display_rotation/pages/rotator.html
+.env

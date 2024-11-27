@@ -1,8 +1,20 @@
 {
     "pages": {
-        "austerity.html": {
+        "another_test.html": {
             "active": false,
+            "order": 8
+        },
+        "austerity.html": {
+            "active": true,
             "order": 1
+        },
+        "daily_data_insight.html": {
+            "active": true,
+            "order": 11
+        },
+        "democracy manifest.html": {
+            "active": false,
+            "order": 9
         },
         "events-this-week.html": {
             "active": true,
@@ -13,11 +25,15 @@
             "order": 3
         },
         "image_test.html": {
-            "active": true,
+            "active": false,
             "order": 4
         },
-        "ration-club.html": {
+        "pairwork.html": {
             "active": false,
+            "order": 8
+        },
+        "ration-club.html": {
+            "active": true,
             "order": 5
         },
         "smb-instructions.html": {
