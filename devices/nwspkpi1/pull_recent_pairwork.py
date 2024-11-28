@@ -76,7 +76,7 @@ h1 {
 
 .summary strong {
     display: block;
-    font-size: 24px;
+    font-size: 30px;
     color: #B5A642;
     margin-bottom: 15px;
     font-family: "Courier New", monospace;
@@ -91,7 +91,7 @@ h1 {
     padding-left: 15px;
     position: relative;
     margin-bottom: 12px;
-    font-size: 24px;
+    font-size: 30px;
     line-height: 1.5;
 }
 
