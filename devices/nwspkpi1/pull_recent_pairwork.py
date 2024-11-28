@@ -76,7 +76,7 @@ h1 {
 
 .summary strong {
     display: block;
-    font-size: 14px;
+    font-size: 24px;
     color: #B5A642;
     margin-bottom: 15px;
     font-family: "Courier New", monospace;
@@ -91,7 +91,7 @@ h1 {
     padding-left: 15px;
     position: relative;
     margin-bottom: 12px;
-    font-size: 13px;
+    font-size: 24px;
     line-height: 1.5;
 }
 
@@ -188,7 +188,7 @@ def get_summary_from_llm(notes):
             max_tokens=512,
             messages=[{
                 "role": "user",
-                "content": f"Summarize the outcomes of these meetings in 1-3 clear and concise bullet points, maxmimum 50 words. Return only a bulleted list with no other preamble: {notes}"
+                "content": f"Summarize the notes in first person plural in one clear concice sentence, maxmimum 20 words: {notes}"
             }]
         )
         # Get text directly from the first content block

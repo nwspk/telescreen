@@ -5,7 +5,7 @@
             "order": 8
         },
         "austerity.html": {
-            "active": true,
+            "active": false,
             "order": 1
         },
         "daily_data_insight.html": {
@@ -29,11 +29,11 @@
             "order": 4
         },
         "pairwork.html": {
-            "active": false,
+            "active": true,
             "order": 8
         },
         "ration-club.html": {
-            "active": true,
+            "active": false,
             "order": 5
         },
         "smb-instructions.html": {
