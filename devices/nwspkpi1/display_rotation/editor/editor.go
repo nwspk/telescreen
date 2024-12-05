@@ -22,7 +22,7 @@ const editorHTML = `<!DOCTYPE html>
             gap: 20px;
         }
         .sidebar {
-            width: 200px;
+            width: 300px;
             background: #f5f5f5;
             padding: 15px;
             border-radius: 8px;
@@ -50,12 +50,42 @@ const editorHTML = `<!DOCTYPE html>
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 4px;
+            background: white;
+        }
+
+        .file-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .filename-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .file-list li:hover {
             background: #e0e0e0;
-        }
-        .file-list li.inactive {
-            opacity: 0.6;
         }
         .controls {
             margin-bottom: 15px;
@@ -179,28 +209,42 @@ const editorHTML = `<!DOCTYPE html>
                 const list = document.getElementById('fileList');
                 list.innerHTML = '';
                 
-                files.forEach(file => {
+                files.forEach(function(file) {
                     const li = document.createElement('li');
-                    const isActive = pageConfig.pages[file]?.active !== false;
+                    const isActive = pageConfig.pages[file] && pageConfig.pages[file].active === true;
                     li.className = isActive ? '' : 'inactive';
                     
                     const nameSpan = document.createElement('span');
+                    nameSpan.className = 'filename-text';
                     nameSpan.textContent = file;
-                    nameSpan.onclick = () => loadFile(file);
+                    nameSpan.onclick = function() { loadFile(file); };
+                    
+                    const controlsDiv = document.createElement('div');
+                    controlsDiv.className = 'file-controls';
                     
                     const toggle = document.createElement('div');
                     toggle.className = 'status-toggle' + (isActive ? ' active' : '');
-                    toggle.onclick = (e) => {
+                    toggle.onclick = function(e) {
                         e.stopPropagation();
                         togglePageStatus(file);
                     };
                     
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.textContent = '🗑️';
+                    deleteBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        deletePage(file);
+                    };
+                    
+                    controlsDiv.appendChild(toggle);
+                    controlsDiv.appendChild(deleteBtn);
                     li.appendChild(nameSpan);
-                    li.appendChild(toggle);
+                    li.appendChild(controlsDiv);
                     list.appendChild(li);
                 });
             })
-            .catch(error => {
+            .catch(function(error) {
                 console.error('Error loading file list:', error);
                 showStatus('Error loading file list', true);
             });
@@ -209,7 +253,7 @@ const editorHTML = `<!DOCTYPE html>
         function togglePageStatus(filename) {
             if (!pageConfig.pages[filename]) {
                 pageConfig.pages[filename] = {
-                    active: true,
+                    active: false,
                     order: Object.keys(pageConfig.pages).length + 1
                 };
             }
@@ -302,6 +346,31 @@ const editorHTML = `<!DOCTYPE html>
             status.className = 'status ' + (isError ? 'error' : 'success');
             status.style.display = 'block';
             setTimeout(() => status.style.display = 'none', 3000);
+        }
+
+        function deletePage(filename) {
+            if (!confirm('Move "' + filename + '" to rubbish?')) {
+                return;
+            }
+            
+            fetch('/api/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename: filename })
+            })
+            .then(function(response) {
+                if (response.ok) {
+                    showStatus(filename + ' moved to rubbish');
+                    loadFileList();
+                } else {
+                    showStatus('Error moving file to rubbish', true);
+                }
+            })
+            .catch(function(error) {
+                showStatus('Error moving file to rubbish', true);
+            });
         }
 
         loadFileList();
