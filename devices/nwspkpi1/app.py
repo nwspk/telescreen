@@ -9,6 +9,7 @@ import time
 import gc
 import os
 import math
+from pathlib import Path
 
 # testing webhook (delete this line)
 
@@ -28,10 +29,10 @@ class DataCache:
 cache = DataCache()
 
 def update_counts_csv():
-    """Update counts CSV with new data."""
+    """Update counts CSV with new data from daily log files."""
     try:
         counts_csv_path = 'counts.csv'
-        ble_log_path = 'ble_log.csv'
+        logs_dir = 'logs'
 
         # Initialize counts_df
         if os.path.exists(counts_csv_path):
@@ -48,21 +49,34 @@ def update_counts_csv():
         else:
             last_processed_time = None
 
-        # Read new data from ble_log.csv
-        if os.path.exists(ble_log_path):
+        # Read data from daily log files (last 3 days to cover 48 hours)
+        new_data_frames = []
+        if os.path.exists(logs_dir):
+            # Get all daily log files and sort them
+            log_files = sorted(Path(logs_dir).glob('ble_log_*.csv'))
+            # Take the last 3 files to ensure we have at least 48 hours of data
+            recent_log_files = log_files[-3:] if len(log_files) >= 3 else log_files
+
+            for log_file in recent_log_files:
+                try:
+                    df = pd.read_csv(log_file, usecols=['Timestamp'], parse_dates=['Timestamp'])
+                    new_data_frames.append(df)
+                    print(f"Read {len(df)} rows from {log_file.name}")
+                except Exception as e:
+                    print(f"Error reading {log_file}: {e}")
+                    continue
+
+        if new_data_frames:
+            # Combine all data from the daily log files
+            new_data = pd.concat(new_data_frames, ignore_index=True)
+
+            # Check if timestamps are timezone-naive before localizing
+            if new_data['Timestamp'].dt.tz is None:
+                new_data['Timestamp'] = new_data['Timestamp'].dt.tz_localize('UTC')
+
+            # Filter to only new data if we have a last processed time
             if last_processed_time:
-                # Read only new data
-                new_data = pd.read_csv(ble_log_path, usecols=['Timestamp'], parse_dates=['Timestamp'])
-                # Check if timestamps are timezone-naive before localizing
-                if new_data['Timestamp'].dt.tz is None:
-                    new_data['Timestamp'] = new_data['Timestamp'].dt.tz_localize('UTC')
                 new_data = new_data[new_data['Timestamp'] > last_processed_time]
-            else:
-                # First run, read entire file
-                new_data = pd.read_csv(ble_log_path, usecols=['Timestamp'], parse_dates=['Timestamp'])
-                # Check if timestamps are timezone-naive before localizing
-                if new_data['Timestamp'].dt.tz is None:
-                    new_data['Timestamp'] = new_data['Timestamp'].dt.tz_localize('UTC')
         else:
             new_data = pd.DataFrame(columns=['Timestamp'])
 
