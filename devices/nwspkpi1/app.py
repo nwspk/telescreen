@@ -59,7 +59,7 @@ def update_counts_csv():
 
             for log_file in recent_log_files:
                 try:
-                    df = pd.read_csv(log_file, usecols=['Timestamp'], parse_dates=['Timestamp'])
+                    df = pd.read_csv(log_file, usecols=['Timestamp'])
                     new_data_frames.append(df)
                     print(f"Read {len(df)} rows from {log_file.name}")
                 except Exception as e:
@@ -70,8 +70,14 @@ def update_counts_csv():
             # Combine all data from the daily log files
             new_data = pd.concat(new_data_frames, ignore_index=True)
 
+            # Convert to datetime and ensure timezone-aware
+            new_data['Timestamp'] = pd.to_datetime(new_data['Timestamp'], errors='coerce')
+
+            # Drop rows where timestamp conversion failed
+            new_data = new_data.dropna(subset=['Timestamp'])
+
             # Check if timestamps are timezone-naive before localizing
-            if new_data['Timestamp'].dt.tz is None:
+            if len(new_data) > 0 and new_data['Timestamp'].dt.tz is None:
                 new_data['Timestamp'] = new_data['Timestamp'].dt.tz_localize('UTC')
 
             # Filter to only new data if we have a last processed time
@@ -85,7 +91,7 @@ def update_counts_csv():
             new_data = new_data.dropna(subset=['Timestamp'])
 
             # Round timestamps to the nearest minute
-            new_data['Timestamp'] = new_data['Timestamp'].dt.floor('T')
+            new_data['Timestamp'] = new_data['Timestamp'].dt.floor('min')
 
             # Aggregate counts per minute
             new_counts = new_data.groupby('Timestamp').size().reset_index(name='Count')
@@ -127,7 +133,7 @@ def update_data():
 
             if counts_df is not None and not counts_df.empty:
                 # Round timestamps to the nearest minute
-                counts_df['Timestamp'] = counts_df['Timestamp'].dt.floor('T')
+                counts_df['Timestamp'] = counts_df['Timestamp'].dt.floor('min')
 
                 # Aggregate counts by Timestamp to handle duplicates
                 counts_df = counts_df.groupby('Timestamp', as_index=False)['Count'].sum()
@@ -145,7 +151,7 @@ def update_data():
                 counts_df = counts_df[counts_df.index >= last_48_hours]
 
                 # Apply 15-minute rolling average with centered window
-                smoothed_counts = counts_df['Count'].rolling('15T', center=True, min_periods=1).mean()
+                smoothed_counts = counts_df['Count'].rolling('15min', center=True, min_periods=1).mean()
 
                 # Apply additional exponential smoothing to reduce spikes
                 smoothed_counts = smoothed_counts.ewm(span=5).mean()
