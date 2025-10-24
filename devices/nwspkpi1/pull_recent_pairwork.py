@@ -188,7 +188,7 @@ def get_summary_from_llm(notes):
             max_tokens=512,
             messages=[{
                 "role": "user",
-                "content": f"Summarize the notes in first person plural in one clear concice sentence, maxmimum 20 words: {notes}"
+                "content": f"Summarize the notes in first person plural in one clear concice sentence, maxmimum 15 words: {notes}"
             }]
         )
         # Get text directly from the first content block
