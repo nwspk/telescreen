@@ -41,7 +41,7 @@
             "order": 24
         },
         "daily_data_insight.html": {
-            "active": false,
+            "active": true,
             "order": 11
         },
         "dogbed_GIF.html": {

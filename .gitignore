@@ -1,1 +1,8 @@
 ble-env/
+
+# macOS metadata
+.DS_Store
+
+# Data files
+counts.csv
+devices/*/ble_log.csv
