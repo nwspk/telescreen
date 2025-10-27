@@ -1,0 +1,16 @@
+[Unit]
+Description=WiFi Network Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/wifi_app
+ExecStart=/usr/bin/python3 /home/pi/wifi_app/wifi_app.py --port 5002
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/pi/wifi_app/service.log
+StandardError=append:/home/pi/wifi_app/service.log
+
+[Install]
+WantedBy=multi-user.target

@@ -318,8 +318,8 @@ def scan_and_log():
         except Exception as e:
             logger.error(f"Error in scan_and_log: {e}")
 
-        # Wait 2 minutes before next scan
-        time.sleep(120)
+        # Wait 15 minutes before next scan
+        time.sleep(900)
 
 
 @app.route('/')
