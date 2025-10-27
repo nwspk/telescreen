@@ -38,16 +38,18 @@ def update_counts_csv():
         if os.path.exists(counts_csv_path):
             counts_df = pd.read_csv(counts_csv_path, parse_dates=['Timestamp'])
             # Check if timestamps are timezone-naive before localizing
-            if counts_df['Timestamp'].dt.tz is None:
+            if not counts_df.empty and counts_df['Timestamp'].dt.tz is None:
                 counts_df['Timestamp'] = counts_df['Timestamp'].dt.tz_localize('UTC')
         else:
             counts_df = pd.DataFrame(columns=['Timestamp', 'Count'])
 
         # Determine the last processed timestamp
-        if not counts_df.empty:
+        if not counts_df.empty and len(counts_df) > 0:
             last_processed_time = counts_df['Timestamp'].max()
+            print(f"Last processed time: {last_processed_time}")
         else:
             last_processed_time = None
+            print("No previous data in counts.csv, will process all available data")
 
         # Read data from daily log files (last 3 days to cover 48 hours)
         new_data_frames = []
@@ -89,12 +91,14 @@ def update_counts_csv():
         if not new_data.empty:
             # Drop rows with NaT values
             new_data = new_data.dropna(subset=['Timestamp'])
+            print(f"Processing {len(new_data)} new data points")
 
             # Round timestamps to the nearest minute
             new_data['Timestamp'] = new_data['Timestamp'].dt.floor('min')
 
             # Aggregate counts per minute
             new_counts = new_data.groupby('Timestamp').size().reset_index(name='Count')
+            print(f"Aggregated into {len(new_counts)} minute-level counts")
 
             # Append new counts to counts_df
             counts_df = pd.concat([counts_df, new_counts], ignore_index=True)
