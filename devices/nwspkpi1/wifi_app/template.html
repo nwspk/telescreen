@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Network Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            color: #60a5fa;
+        }
+        .subtitle {
+            color: #9ca3af;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #2d2d2d;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .stat-label {
+            color: #9ca3af;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        .stat-value {
+            font-size: 48px;
+            font-weight: bold;
+            color: #60a5fa;
+        }
+        .people-list {
+            margin-top: 15px;
+        }
+        .person-badge {
+            display: inline-block;
+            background: #374151;
+            color: #60a5fa;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 5px 5px 5px 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .chart-container {
+            background: #2d2d2d;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .chart-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+        .device-list {
+            background: #2d2d2d;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+        .device-item {
+            padding: 15px;
+            border-bottom: 1px solid #3d3d3d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+        .device-item:last-child { border-bottom: none; }
+        .device-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .device-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        .device-owner {
+            font-size: 14px;
+            color: #60a5fa;
+            margin-bottom: 4px;
+        }
+        .device-mac {
+            font-family: 'Courier New', monospace;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+        .device-ip {
+            color: #6b7280;
+            font-size: 13px;
+        }
+        .device-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #60a5fa;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background: #3b82f6;
+        }
+        .btn-secondary {
+            background: #374151;
+            color: #9ca3af;
+        }
+        .btn-secondary:hover {
+            background: #4b5563;
+            color: #ffffff;
+        }
+        .btn-danger {
+            background: #dc2626;
+            color: #ffffff;
+        }
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: #2d2d2d;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+        }
+        .modal-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #9ca3af;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #374151;
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 14px;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .last-update {
+            color: #6b7280;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .unclaimed-badge {
+            background: #374151;
+            color: #6b7280;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WiFi Network Monitor</h1>
+        <p class="subtitle">Real-time device tracking on your network</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Currently Connected</div>
+                <div class="stat-value" id="current-count">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Peak (24h)</div>
+                <div class="stat-value" id="peak-count">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">People Online</div>
+                <div class="stat-value" id="people-count">-</div>
+                <div class="people-list" id="people-list"></div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Device Count - Last 48 Hours</div>
+            <canvas id="historyChart"></canvas>
+        </div>
+
+        <div class="device-list">
+            <div class="chart-title">Connected Devices</div>
+            <div id="device-list-content"></div>
+        </div>
+
+        <div class="last-update">
+            Last updated: <span id="last-update">-</span>
+        </div>
+    </div>
+
+    <!-- Claim Device Modal -->
+    <div class="modal" id="claimModal">
+        <div class="modal-content">
+            <div class="modal-title">Claim Device</div>
+            <form id="claimForm">
+                <input type="hidden" id="claim-mac" />
+                <div class="form-group">
+                    <label class="form-label">Device Name</label>
+                    <input type="text" class="form-input" id="claim-device-name" placeholder="e.g., John's iPhone" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Owner Name</label>
+                    <select class="form-input" id="claim-owner" required>
+                        <option value="">Select owner...</option>
+                        <optgroup label="Fellowship Candidates">
+                            <option value="Huda A">Huda A</option>
+                            <option value="Tuna A">Tuna A</option>
+                            <option value="Nicholas B">Nicholas B</option>
+                            <option value="Alexandra C">Alexandra C</option>
+                            <option value="Jamie C">Jamie C</option>
+                            <option value="Connor D">Connor D</option>
+                            <option value="Francesca G">Francesca G</option>
+                            <option value="Davit J">Davit J</option>
+                            <option value="Fatima Sarah K">Fatima Sarah K</option>
+                            <option value="Aadi K">Aadi K</option>
+                            <option value="Gamithra M">Gamithra M</option>
+                            <option value="Emily M">Emily M</option>
+                            <option value="Frederick O">Frederick O</option>
+                            <option value="Martina O">Martina O</option>
+                            <option value="Chris O">Chris O</option>
+                            <option value="Alessandro P">Alessandro P</option>
+                            <option value="David P">David P</option>
+                            <option value="Asil S">Asil S</option>
+                        </optgroup>
+                        <optgroup label="Leadership">
+                            <option value="Edward S">Edward S (Dean)</option>
+                            <option value="Mark W">Mark W (Chaplain)</option>
+                            <option value="Matt S">Matt S (Librarian)</option>
+                        </optgroup>
+                        <optgroup label="Faculty">
+                            <option value="Zarinah A">Zarinah A</option>
+                            <option value="Sam B">Sam B</option>
+                            <option value="Joshua B">Joshua B</option>
+                            <option value="Hoagy D">Hoagy D</option>
+                            <option value="Sinead D">Sinead D</option>
+                            <option value="John E">John E</option>
+                            <option value="Theodore K">Theodore K</option>
+                            <option value="James M">James M</option>
+                            <option value="Hannah O">Hannah O</option>
+                            <option value="Peyman O">Peyman O</option>
+                            <option value="Anouk R">Anouk R</option>
+                            <option value="Six S">Six S</option>
+                            <option value="Andreas V">Andreas V</option>
+                            <option value="Alex V">Alex V</option>
+                            <option value="Lewis W">Lewis W</option>
+                        </optgroup>
+                        <optgroup label="Staff">
+                            <option value="Declan P">Declan P</option>
+                            <option value="Aisha B">Aisha B</option>
+                            <option value="Luciana C">Luciana C</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeClaimModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let historyChart = null;
+
+        async function updateData() {
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+
+                // Update current count
+                document.getElementById('current-count').textContent = data.current_count;
+
+                // Calculate and display peak
+                const peak = Math.max(...data.history.map(h => h.count));
+                document.getElementById('peak-count').textContent = peak;
+
+                // Update people online
+                document.getElementById('people-count').textContent = data.people_online.length;
+                const peopleList = document.getElementById('people-list');
+                if (data.people_online.length > 0) {
+                    peopleList.innerHTML = data.people_online.map(person =>
+                        `<span class="person-badge">${person}</span>`
+                    ).join('');
+                } else {
+                    peopleList.innerHTML = '';
+                }
+
+                // Update chart
+                updateChart(data.history);
+
+                // Update device list
+                updateDeviceList(data.current_devices);
+
+                // Update timestamp
+                document.getElementById('last-update').textContent = new Date().toLocaleString();
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        function updateChart(history) {
+            const ctx = document.getElementById('historyChart').getContext('2d');
+
+            const labels = history.map(h => {
+                const date = new Date(h.hour);
+                return date.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    hour12: true
+                });
+            });
+
+            const counts = history.map(h => h.count);
+
+            if (historyChart) {
+                historyChart.destroy();
+            }
+
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Devices',
+                        data: counts,
+                        borderColor: '#60a5fa',
+                        backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1f2937',
+                            titleColor: '#f3f4f6',
+                            bodyColor: '#f3f4f6',
+                            borderColor: '#374151',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#9ca3af',
+                                stepSize: 1
+                            },
+                            grid: { color: '#374151' }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#9ca3af',
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: { color: '#374151' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDeviceList(devices) {
+            const container = document.getElementById('device-list-content');
+
+            if (devices.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: #6b7280;">No devices detected</div>';
+                return;
+            }
+
+            // Sort: claimed devices first, then by owner name
+            devices.sort((a, b) => {
+                if (a.claimed && !b.claimed) return -1;
+                if (!a.claimed && b.claimed) return 1;
+                if (a.owner && b.owner) return a.owner.localeCompare(b.owner);
+                return 0;
+            });
+
+            container.innerHTML = devices.map(device => {
+                const mac = device['MAC Address'];
+                const ip = device['IP Address'];
+                const deviceName = device.device_name || 'Unclaimed Device';
+                const owner = device.owner;
+                const claimed = device.claimed;
+
+                return `
+                    <div class="device-item">
+                        <div class="device-info">
+                            <div class="device-name">${deviceName}</div>
+                            ${owner ? `<div class="device-owner">${owner}</div>` : ''}
+                            <div class="device-mac">${mac} • ${ip}</div>
+                        </div>
+                        <div class="device-actions">
+                            ${!claimed ? `<span class="unclaimed-badge">Unclaimed</span>` : ''}
+                            ${claimed
+                                ? `<button class="btn btn-danger" onclick="unclaimDevice('${mac}')">Unclaim</button>`
+                                : `<button class="btn btn-primary" onclick="openClaimModal('${mac}')">Claim</button>`
+                            }
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openClaimModal(mac) {
+            document.getElementById('claim-mac').value = mac;
+            document.getElementById('claim-device-name').value = '';
+            document.getElementById('claim-owner').value = '';
+            document.getElementById('claimModal').classList.add('active');
+        }
+
+        function closeClaimModal() {
+            document.getElementById('claimModal').classList.remove('active');
+        }
+
+        document.getElementById('claimForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const mac = document.getElementById('claim-mac').value;
+            const deviceName = document.getElementById('claim-device-name').value;
+            const owner = document.getElementById('claim-owner').value;
+
+            try {
+                const response = await fetch('/api/devices/claim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mac, device_name: deviceName, owner })
+                });
+
+                if (response.ok) {
+                    closeClaimModal();
+                    updateData(); // Refresh data
+                } else {
+                    alert('Error claiming device');
+                }
+            } catch (error) {
+                console.error('Error claiming device:', error);
+                alert('Error claiming device');
+            }
+        });
+
+        async function unclaimDevice(mac) {
+            if (!confirm('Remove this device claim?')) return;
+
+            try {
+                const response = await fetch('/api/devices/unclaim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mac })
+                });
+
+                if (response.ok) {
+                    updateData(); // Refresh data
+                } else {
+                    alert('Error unclaiming device');
+                }
+            } catch (error) {
+                console.error('Error unclaiming device:', error);
+                alert('Error unclaiming device');
+            }
+        }
+
+        // Initial load
+        updateData();
+
+        // Refresh every 30 seconds
+        setInterval(updateData, 30000);
+    </script>
+</body>
+</html>

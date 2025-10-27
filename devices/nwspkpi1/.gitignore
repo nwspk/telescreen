@@ -1,20 +1,36 @@
 # Python virtual environment
 ble-env/
+venv/
+env/
+ENV/
 
 # Python cache files
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
 
 # Log files
 *.log
 
 # Temporary files
 *.tmp
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
 
 # Project specific
 ble_log.csv   # don't sync the log file (contains specific MAC addresses)
 counts.csv
 logs/
+wifi_logs/
+wifi_app/wifi_logs/
+wifi_app/wifi_logs/*
+wifi_app/mapping.csv
 ../../webhook_server.py
 display_rotation/pages/*
 !display_rotation/pages/.gitkeep
