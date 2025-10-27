@@ -5,8 +5,8 @@ After=network.target
 [Service]
 Type=simple
 User=nwspkpi1
-WorkingDirectory=/home/nwspkpi1/wifi_app
-ExecStart=/home/nwspkpi1/wifi_app/venv/bin/python /home/nwspkpi1/wifi_app/wifi_app.py --port 5002
+WorkingDirectory=/home/nwspkpi1/telescreen/devices/nwspkpi1/wifi_app
+ExecStart=/home/nwspkpi1/telescreen/devices/nwspkpi1/wifi_app/venv/bin/python /home/nwspkpi1/telescreen/devices/nwspkpi1/wifi_app/wifi_app.py --port 5002
 Restart=always
 RestartSec=10
 
