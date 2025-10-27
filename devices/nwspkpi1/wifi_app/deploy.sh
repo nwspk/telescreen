@@ -23,9 +23,12 @@ if [ ! -f /etc/rpi-issue ]; then
     fi
 fi
 
-# Install Python dependencies
+# Create virtual environment and install dependencies
+echo -e "${GREEN}Setting up Python virtual environment...${NC}"
+python3 -m venv venv
+
 echo -e "${GREEN}Installing Python dependencies...${NC}"
-pip3 install flask pandas
+./venv/bin/pip install flask pandas
 
 # Create systemd service
 echo -e "${GREEN}Installing systemd service...${NC}"

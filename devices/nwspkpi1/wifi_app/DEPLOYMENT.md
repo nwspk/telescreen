@@ -37,10 +37,11 @@ That's it! The script will:
 
 If you prefer to do it manually:
 
-### 1. Install Dependencies
+### 1. Create Virtual Environment and Install Dependencies
 
 ```bash
-pip3 install flask pandas
+python3 -m venv venv
+./venv/bin/pip install flask pandas
 ```
 
 ### 2. Install Systemd Service
