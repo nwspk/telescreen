@@ -47,8 +47,9 @@ sleep 2
 if sudo systemctl is-active --quiet wifi-monitor.service; then
     echo -e "${GREEN}✓ WiFi Monitor is running!${NC}"
     echo
+    IP=$(hostname -I | awk '{print $1}')
     echo "Access the web interface at:"
-    echo "  http://$(hostname -I | awk '{print $1}'):5002"
+    echo "  http://${IP}:5002"
     echo
     echo "Useful commands:"
     echo "  View logs:     sudo journalctl -u wifi-monitor.service -f"

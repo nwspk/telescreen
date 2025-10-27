@@ -9,8 +9,6 @@ WorkingDirectory=/home/nwspkpi1/wifi_app
 ExecStart=/home/nwspkpi1/wifi_app/venv/bin/python /home/nwspkpi1/wifi_app/wifi_app.py --port 5002
 Restart=always
 RestartSec=10
-StandardOutput=append:/home/nwspkpi1/wifi_app/service.log
-StandardError=append:/home/nwspkpi1/wifi_app/service.log
 
 [Install]
 WantedBy=multi-user.target
